@@ -8,6 +8,8 @@ from apiServer import *
 from etcd import *
 from cpuAnalysis import *
 from memoryAnalysis import *
+from spokeMemoryAnalysis import *
+from spokeCPUAnalysis import *
 from thanos import *
 from apiServerObjects import *
 from managedClusterNodes import *
@@ -26,12 +28,13 @@ import os
 # pass debug(boolean) as env
 def main():
 
-    start_time=(datetime.now() - timedelta(days=7))
+    start_time=(datetime.now() - timedelta(hours=10))
     end_time=datetime.now()
     #start_time=dt.datetime(2021, 7, 31, 21, 30, 0, tzinfo=query.getUTC())
     #end_time=dt.datetime(2021, 8, 1, 12, 25, 0, tzinfo=query.getUTC())
     step='1m'
     tsdb = sys.argv[1]
+    cluster = sys.argv[2]
 
     now = datetime.now()
     #print(Fore.MAGENTA+"")
@@ -45,7 +48,9 @@ def main():
     print(Style.RESET_ALL)
    
     createSubdir()
-    mch = checkMCHStatus()
+    # hub only
+    if cluster != "spoke" :
+       mch = checkMCHStatus()
     node = checkNodeStatus()
 
     if tsdb == "prom" : #if route is cluster prom
@@ -54,15 +59,21 @@ def main():
          etcd = checkEtcdStatus(start_time, end_time, step)
          cpu = checkCPUUsage(start_time, end_time, step)
          memory = checkMemoryUsage(start_time, end_time, step)
-         thanos = checkThanosStatus(start_time, end_time, step)
-         apiObjet = checkAPIServerObjects(start_time, end_time, step)
+         podcpu = checkSpokeCPUUsage(start_time, end_time, step)
+         podmemory = checkSpokeMemoryUsage(start_time, end_time, step)
+         # hub only
+         if cluster != "spoke" :
+            thanos = checkThanosStatus(start_time, end_time, step)
+            apiObjet = checkAPIServerObjects(start_time, end_time, step)
     else: #if route is observability thanos
          # does not work yet
          sizing = checkACMHubClusterUtilization() 
     
-    mc = checkManagedClusterStatus()
-    getManagedClusterNodeCount()
-    saveMasterDF()
+    # hub only
+    if cluster != "spoke" :
+        mc = checkManagedClusterStatus()
+        getManagedClusterNodeCount()
+        saveMasterDF()
 
     print(Back.LIGHTYELLOW_EX+"")
     print("************************************************************************************************")
