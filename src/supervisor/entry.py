@@ -25,16 +25,34 @@ import os
 #Back(for highlight)	BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, RESET
 #Style	DIM, NORMAL, BRIGHT, RESET_ALL
 
+def parse_timedelta(arg):
+    if 'd' in arg:
+        return timedelta(days=int(arg[:-1]))
+    elif 'h' in arg:
+        return timedelta(hours=int(arg[:-1]))
+    elif 'm' in arg:
+        return timedelta(minutes=int(arg[:-1]))
+    else:
+        raise ValueError("Invalid time format. Use 'h' for hours or 'm' for minutes.")
+
 # pass debug(boolean) as env
 def main():
-
-    start_time=(datetime.now() - timedelta(hours=10))
-    end_time=datetime.now()
-    #start_time=dt.datetime(2021, 7, 31, 21, 30, 0, tzinfo=query.getUTC())
-    #end_time=dt.datetime(2021, 8, 1, 12, 25, 0, tzinfo=query.getUTC())
     step='1m'
     tsdb = sys.argv[1]
-    cluster = sys.argv[2]
+
+    cluster='hub'
+    if len(sys.argv) > 2:
+        cluster = sys.argv[2].lower()  
+        if cluster not in ['hub', 'spoke']:
+            print("Invalid cluster. Use 'hub' or 'spoke'. Defaulting to 'hub'.")
+            cluster = 'hub'
+
+    #start_time=dt.datetime(2021, 7, 31, 21, 30, 0, tzinfo=query.getUTC())
+    #end_time=dt.datetime(2021, 8, 1, 12, 25, 0, tzinfo=query.getUTC())
+    start_time=(datetime.now() - timedelta(days=7))
+    if len(sys.argv) > 3 :
+        start_time=(datetime.now() - parse_timedelta(sys.argv[3]))
+    end_time=datetime.now()
 
     now = datetime.now()
     #print(Fore.MAGENTA+"")
