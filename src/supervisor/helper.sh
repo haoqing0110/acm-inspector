@@ -25,7 +25,7 @@ oc login ${OC_CLUSTER_URL} --token ${OC_TOKEN} --insecure-skip-tls-verify=true
 
 #python ~/code/acm-inspector/src/supervisor/entry.py prom
 cd /acm-inspector/src/supervisor
-python entry.py prom
+python3 entry.py prom
 
 
 

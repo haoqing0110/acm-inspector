@@ -24,6 +24,7 @@ def checkCPUUsage(startTime, endTime, step):
     status=kubeAPICPUUsage(pc,startTime, endTime, step)
     status=ACMCPUUsage(pc,startTime, endTime, step)
     status=ACMDetailCPUUsage(pc,startTime, endTime, step)
+    status=ACMDetailCPUUsageByContainer(pc,startTime, endTime, step)
     status=OtherCPUUsage(pc,startTime, endTime, step)
     status=OtherDetailCPUUsage(pc,startTime, endTime, step)
     status=ACMObsCPUUsage(pc,startTime, endTime, step)
@@ -667,6 +668,43 @@ def ACMOCMDetailCPUUsage(pc,startTime, endTime, step):
 
     except Exception as e:
         print(Fore.RED+"Error in getting cpu details for ACM Open CLuster Management: ",e)
+        print(Style.RESET_ALL)    
+    print("=============================================")
+   
+    status=True
+    return status
+
+def ACMDetailCPUUsageByContainer(pc,startTime, endTime, step):
+
+    print("Detailed ACM CPU Core usage by pod")
+
+    try:
+        acm_detail_cpu = pc.custom_query('sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~"multicluster-engine|open-cluster-.+"}) by (pod)')
+
+        acm_detail_cpu_df = MetricSnapshotDataFrame(acm_detail_cpu)
+        acm_detail_cpu_df["value"]=acm_detail_cpu_df["value"].astype(float)
+        acm_detail_cpu_df.rename(columns={"value": "CPUCoreUsage"}, inplace = True)
+        print(acm_detail_cpu_df[['pod','CPUCoreUsage']].to_markdown())
+
+        acm_detail_cpu_trend = pc.custom_query_range(
+        query='sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~"multicluster-engine|open-cluster-.+"}) by (pod)',
+            start_time=startTime,
+            end_time=endTime,
+            step=step,
+        )
+
+        acm_detail_cpu_trend_df = MetricRangeDataFrame(acm_detail_cpu_trend)
+        acm_detail_cpu_trend_df["value"]=acm_detail_cpu_trend_df["value"].astype(float)
+        acm_detail_cpu_trend_df.index= pandas.to_datetime(acm_detail_cpu_trend_df.index, unit="s")
+        acm_detail_cpu_trend_df =  acm_detail_cpu_trend_df.pivot( columns='pod',values='value')
+        acm_detail_cpu_trend_df.rename(columns={"value": "CPUCoreUsage"}, inplace = True)
+        acm_detail_cpu_trend_df.plot(title="ACM Detailed CPU Core usage",figsize=(30, 15))
+        plt.savefig('../../output/breakdown/acm-detail-cpu-usage-by-pod.png')
+        saveCSV(acm_detail_cpu_trend_df,"acm-detail-cpu-usage-by-pod")
+        plt.close('all')
+
+    except Exception as e:
+        print(Fore.RED+"Error in getting cpu details for ACM: ",e)
         print(Style.RESET_ALL)    
     print("=============================================")
    

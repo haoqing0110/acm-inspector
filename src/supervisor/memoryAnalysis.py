@@ -24,11 +24,13 @@ def checkMemoryUsage(startTime, endTime, step):
     status=kubeAPIMemUsageRSS(pc,startTime, endTime, step)
     status=ACMMemUsageRSS(pc,startTime, endTime, step)
     status=ACMDetailMemUsageRSS(pc,startTime, endTime, step)
+#    status=ACMDetailMemUsageRSSByContainer(pc,startTime, endTime, step)
     status=OtherMemUsageRSS(pc,startTime, endTime, step)
     status=OtherDetailMemUsageRSS(pc,startTime, endTime, step)
     status=kubeAPIMemUsageWSS(pc,startTime, endTime, step)
     status=ACMMemUsageWSS(pc,startTime, endTime, step)
     status=ACMDetailMemUsageWSS(pc,startTime, endTime, step)
+    status=ACMDetailMemUsageWSSByContainer(pc,startTime, endTime, step)
     status=OtherMemUsageWSS(pc,startTime, endTime, step)
     status=OtherDetailMemUsageWSS(pc,startTime, endTime, step)
     status=ACMObsMemUsageRSS(pc,startTime,endTime, step)
@@ -1124,6 +1126,78 @@ def ACMOSrcIdxMemUsageWSS(pc,startTime, endTime, step):
     except Exception as e:
         print(Fore.RED+"Error in getting Memory (wss) for ACM Search Indexer : ",e)  
         print(Style.RESET_ALL)  
+    print("=============================================")
+   
+    status=True
+    return status
+
+#def ACMDetailMemUsageRSSByContainer(pc,startTime, endTime, step):
+#
+#    print("Detailed ACM Memory (rss) usage GB by container")
+#
+#    try:
+#        acm_detail_cpu = pc.custom_query('(sum(container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", cluster="", container!="", namespace=~"multicluster-engine|open-cluster-.+"}) by (container))/(1024*1024*1024)')
+#
+#        acm_detail_cpu_df = MetricSnapshotDataFrame(acm_detail_cpu)
+#        acm_detail_cpu_df["value"]=acm_detail_cpu_df["value"].astype(float)
+#        acm_detail_cpu_df.rename(columns={"value": "ACMOCMDetailMemUsageRSSGB"}, inplace = True)
+#        print(acm_detail_cpu_df[['container','ACMOCMDetailMemUsageRSSGB']].to_markdown())
+#
+#        acm_detail_cpu_trend = pc.custom_query_range(
+#        query='(sum(container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", cluster="", container!="", namespace=~"multicluster-engine|open-cluster-.+"}) by (container))/(1024*1024*1024)',
+#            start_time=startTime,
+#            end_time=endTime,
+#            step=step,
+#        )
+#
+#        acm_detail_cpu_trend_df = MetricRangeDataFrame(acm_detail_cpu_trend)
+#        acm_detail_cpu_trend_df["value"]=acm_detail_cpu_trend_df["value"].astype(float)
+#        acm_detail_cpu_trend_df.index= pandas.to_datetime(acm_detail_cpu_trend_df.index, unit="s")
+#        acm_detail_cpu_trend_df =  acm_detail_cpu_trend_df.pivot( columns='container',values='value')
+#        acm_detail_cpu_trend_df.plot(title="ACM Open cluster management Detailed Memory (rss) usage GB",figsize=(30, 15))
+#        plt.savefig('../../output/breakdown/acm-detail-mem-usage-rss-by-container.png')
+#        saveCSV(acm_detail_cpu_trend_df,"acm-detail-mem-usage-rss-by-container")
+#        plt.close('all')
+#
+#    except Exception as e:
+#        print(Fore.RED+"Error in getting memory (rss) details for ACM Open cluster management: ",e)    
+#        print(Style.RESET_ALL)
+#    print("=============================================")
+#   
+#    status=True
+#    return status
+
+def ACMDetailMemUsageWSSByContainer(pc,startTime, endTime, step):
+
+    print("Detailed ACM Memory (wss) usage MB by pod")
+
+    try:
+        acm_detail_cpu = pc.custom_query('(sum(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", cluster="", container!="", image!="",namespace=~"multicluster-engine|open-cluster-.+"}) by (pod))/(1024*1024)')
+
+        acm_detail_cpu_df = MetricSnapshotDataFrame(acm_detail_cpu)
+        acm_detail_cpu_df["value"]=acm_detail_cpu_df["value"].astype(float)
+        acm_detail_cpu_df.rename(columns={"value": "ACMOCMDetailMemUsageWSSMB"}, inplace = True)
+        print(acm_detail_cpu_df[['pod','ACMOCMDetailMemUsageWSSMB']].to_markdown())
+
+        acm_detail_cpu_trend = pc.custom_query_range(
+        query='(sum(container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", cluster="", container!="", image!="",namespace=~"multicluster-engine|open-cluster-.+"}) by (pod))/(1024*1024)',
+            start_time=startTime,
+            end_time=endTime,
+            step=step,
+        )
+
+        acm_detail_cpu_trend_df = MetricRangeDataFrame(acm_detail_cpu_trend)
+        acm_detail_cpu_trend_df["value"]=acm_detail_cpu_trend_df["value"].astype(float)
+        acm_detail_cpu_trend_df.index= pandas.to_datetime(acm_detail_cpu_trend_df.index, unit="s")
+        acm_detail_cpu_trend_df =  acm_detail_cpu_trend_df.pivot( columns='pod',values='value')
+        acm_detail_cpu_trend_df.plot(title="ACM Open cluster management Detailed Memory (wss) usage MB",figsize=(30, 15))
+        plt.savefig('../../output/breakdown/acm-detail-mem-usage-wss-by-pod.png')
+        saveCSV(acm_detail_cpu_trend_df,"acm-detail-mem-usage-wss-by-pod")
+        plt.close('all')
+
+    except Exception as e:
+        print(Fore.RED+"Error in getting memory (wss) details for ACM Open cluster management: ",e)    
+        print(Style.RESET_ALL)
     print("=============================================")
    
     status=True
